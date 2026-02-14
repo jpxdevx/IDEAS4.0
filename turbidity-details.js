@@ -1,73 +1,91 @@
-// Sample turbidity data
-const turbidityData = [
-    { turbidity: 4.5, timestamp: new Date(Date.now() - 90000) },
-    { turbidity: 5.2, timestamp: new Date(Date.now() - 80000) },
-    { turbidity: 6.1, timestamp: new Date(Date.now() - 70000) },
-    { turbidity: 3.8, timestamp: new Date(Date.now() - 60000) },
-    { turbidity: 7.0, timestamp: new Date(Date.now() - 50000) },
-    { turbidity: 4.2, timestamp: new Date(Date.now() - 40000) },
-    { turbidity: 5.5, timestamp: new Date(Date.now() - 30000) },
-    { turbidity: 4.9, timestamp: new Date(Date.now() - 20000) },
-    { turbidity: 6.3, timestamp: new Date(Date.now() - 10000) },
-    { turbidity: 5.0, timestamp: new Date() }
-];
+import { sensorReadings, evaluateWaterSafety } from "./sensorData.js";
 
-function initChart() {
-    const ctx = document.getElementById('turbidityDetailChart').getContext('2d');
-    const labels = turbidityData.map(d => new Date(d.timestamp).toLocaleTimeString());
-    const values = turbidityData.map(d => d.turbidity);
+let currentIndex = 0, turbidityChart;
 
-    new Chart(ctx, {
-    type: 'line',
+function initChart() 
+{
+  const ctx = document.getElementById('turbidityDetailChart').getContext('2d');
+
+  turbidityChart = new Chart(ctx, {
+    type: 'bar',
     data: {
-        labels: labels,
-        datasets: [{
+      labels: [],
+      datasets: [{
         label: 'Turbidity (NTU)',
-        data: values,
-        borderColor: '#4caf50',
-        backgroundColor: 'rgba(76,175,80,0.1)',
-        fill: true
-        }]
+        data: [],
+        backgroundColor: '#4caf50'
+      }]
     },
     options: {
-        responsive: true,
-        plugins: {
+      responsive: true,
+      plugins: {
         tooltip: {
-            callbacks: {
+          callbacks: {
             label: (ctx) => `Turbidity: ${ctx.parsed.y.toFixed(2)} NTU`
-            }
+          }
         }
-        },
-        scales: {
+      },
+      scales: {
         y: {
-            beginAtZero: true,
-            title: { display: true, text: 'NTU' }
+          beginAtZero: true,
+          title: { display: true, text: 'NTU' }
         }
-        }
+      }
     }
-    });
+  });
 }
 
-function checkSafety() {
-    const latest = turbidityData[turbidityData.length - 1].turbidity;
+function checkSafety(latestReading) 
+{
     const statusDiv = document.getElementById('statusMessage');
     const suggestionList = document.getElementById('suggestionList');
     suggestionList.innerHTML = "";
 
-    if (latest < 5) {
-    statusDiv.textContent = `✅ Water is SAFE to drink (Turbidity: ${latest.toFixed(2)} NTU)`;
-    statusDiv.className = "status safe";
-    suggestionList.innerHTML += "<li>Safe for drinking</li>";
-    suggestionList.innerHTML += "<li>Safe for cooking and utensils</li>";
-    suggestionList.innerHTML += "<li>Safe for irrigation</li>";
-    } else {
-    statusDiv.textContent = `⚠️ Water is NOT safe to drink (Turbidity: ${latest.toFixed(2)} NTU)`;
-    statusDiv.className = "status unsafe";
-    suggestionList.innerHTML += "<li>Use for irrigation (plants tolerate higher turbidity)</li>";
-    suggestionList.innerHTML += "<li>Use for cleaning or washing utensils</li>";
-    suggestionList.innerHTML += "<li>Industrial or construction applications</li>";
+    const safety = evaluateWaterSafety(latestReading)
+
+    statusDiv.textContent = safety.message + `. Turbidity: ${latestReading.turbidity.toFixed(2)}`;
+    statusDiv.className = safety.safe ? "status safe" : "status unsafe";
+
+    if(safety.safe)
+    {
+        suggestionList.innerHTML += "<li>Safe for drinking</li>";
+        suggestionList.innerHTML += "<li>Safe for cooking and utensils</li>";
+        suggestionList.innerHTML += "<li>Safe for irrigation</li>";
+    }
+
+    else
+    {
+        suggestionList.innerHTML += "<li>Use for irrigation (plants tolerate higher turbidity)</li>";
+        suggestionList.innerHTML += "<li>Use for cleaning or washing utensils</li>";
+        suggestionList.innerHTML += "<li>Industrial or construction applications</li>";
     }
 }
 
+function loadNextReading() 
+{
+  if (currentIndex < sensorReadings.length) 
+    {
+        const reading = sensorReadings[currentIndex];
+
+        // Add new label and value
+        turbidityChart.data.labels.push(new Date(reading.timestamp).toLocaleTimeString());
+        turbidityChart.data.datasets[0].data.push(reading.turbidity);
+
+        // Keep only the last 10 values (sliding window)
+        if (turbidityChart.data.labels.length > 10) {
+        turbidityChart.data.labels.shift();
+        turbidityChart.data.datasets[0].data.shift();
+        }
+
+        turbidityChart.update();
+
+        checkSafety(sensorReadings[currentIndex]);
+
+        currentIndex++;
+    } 
+}
+
 initChart();
-checkSafety();
+// checkSafety();
+loadNextReading();
+setInterval(loadNextReading, 10000);
