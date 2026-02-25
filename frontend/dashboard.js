@@ -25,36 +25,34 @@ function evaluateWaterSafety(latest) {
 function initCharts() {
   const ctxPh = document.getElementById("phChart").getContext("2d");
   phChart = new Chart(ctxPh, {
-    type: "line",
-    data: {
-      labels: [],
-      datasets: [
-        {
-          label: "pH Level",
-          data: [],
-          borderColor: "#005f99",
-          backgroundColor: "rgba(0,95,153,0.1)",
-          fill: true,
-        },
-      ],
-    },
+    type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'pH Level',
+                data: [],
+                borderColor: '#005f99',
+                backgroundColor: 'rgba(0, 94, 153, 0.96)',
+                fill: true
+            }]
+        }
   });
 
   const ctxTurbidity = document
     .getElementById("turbidityChart")
     .getContext("2d");
   turbidityChart = new Chart(ctxTurbidity, {
-    type: "bar",
-    data: {
-      labels: [],
-      datasets: [
-        {
-          label: "Turbidity (NTU)",
-          data: [],
-          backgroundColor: "#4caf50",
-        },
-      ],
-    },
+    type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Turbidity (NTU)',
+                data: [],
+                borderColor: '#69450269',
+                backgroundColor: '#4caf4f35',
+                fill: true
+            }]
+        }
   });
 
   const ctxPie = document.getElementById("pieChart").getContext("2d");
@@ -75,6 +73,8 @@ function initCharts() {
 async function updateDashboard() {
   const data = await fetchData();
   if (!data || data.length === 0) return;
+
+  const ordered = data.reverse();
 
   const recentData = data.slice(-10);
   const latest = recentData[recentData.length - 1];
