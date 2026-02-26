@@ -62,12 +62,14 @@ void loop() {
   float turbVoltage = turbRaw * (VREF / ADC_RESOLUTION);
 
   // Calibrated pH formula
-  float pH = 7 + ((PH_REF_VOLTAGE - phVoltage) / 0.18);
+  float pH = 7 + ((1.9 - phVoltage) * 9.5);
 
   // Turbidity formula
-  float turbidityNTU = TURB_A * turbVoltage * turbVoltage +
-                       TURB_B * turbVoltage +
-                       TURB_C;
+ // float turbidityNTU = TURB_A * turbVoltage * turbVoltage +
+  //                     TURB_B * turbVoltage +
+  //                     TURB_C;
+
+  float turbidityNTU = (3.3 - turbVoltage) * 300;
 
   if (turbidityNTU < 0)
     turbidityNTU = 0;
@@ -124,5 +126,5 @@ void loop() {
     WiFi.begin(ssid, password);
   }
 
-  delay(5000);
+  delay(2000);
 }

@@ -57,21 +57,27 @@ async function updateDashboard() {
   const data = await fetchData();
   if (!data || data.length === 0) return;
 
-  const recentData = data.slice(-10);
+  // SORT like pH page
+  const ordered = data.sort((a, b) =>
+    new Date(a.timestamp) - new Date(b.timestamp)
+  );
+
+  const recentData = ordered.slice(-10);
   const latest = recentData[recentData.length - 1];
 
   document.getElementById("current-pH").textContent = latest.pH.toFixed(2);
-  document.getElementById("current-turbidity").textContent = latest.turbidity.toFixed(2) + " NTU";
+  document.getElementById("current-turbidity").textContent =
+    latest.turbidity.toFixed(2) + " NTU";
 
   const safe = evaluateWaterSafety(latest);
   const statusDiv = document.getElementById("statusMessage");
   statusDiv.textContent = safe ? "✅ Safe" : "⚠️ Unsafe";
   statusDiv.style.color = safe ? "#4caf50" : "#f44336";
 
-  if (!safe) alertsCount++;
-  document.getElementById("alertsCount").textContent = alertsCount;
+  const labels = recentData.map(d =>
+    new Date(d.timestamp).toLocaleTimeString()
+  );
 
-  const labels = recentData.map(d => d.timestamp ? new Date(d.timestamp).toLocaleTimeString() : "");
   const phData = recentData.map(d => d.pH);
   const turbidityData = recentData.map(d => d.turbidity);
 
