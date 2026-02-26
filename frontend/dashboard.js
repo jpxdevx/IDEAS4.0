@@ -33,8 +33,8 @@ function evaluateWaterSafety(latest) {
 function initCharts() {
   const ctxPh = document.getElementById("phChart").getContext("2d");
   phChart = new Chart(ctxPh, {
-    type: 'line',
-    data: { labels: [], datasets: [{ label: 'pH Level', data: [], borderColor: '#005f99', fill: false }] },
+    type: 'bar',
+    data: { labels: [], datasets: [{ label: 'pH Level', data: [], borderColor: '#0599f5', backgroundColor: 'blue', fill: true }] },
     options: { responsive: true }
   });
 
