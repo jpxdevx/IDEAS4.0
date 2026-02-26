@@ -4,6 +4,8 @@ const path = require("path");
 const connectDB = require("./backend/config/db");
 const dataRoutes = require("./backend/routes/dataRoutes");
 
+require("./backend/scheduler.js");
+
 const app = express();
 
 connectDB();
