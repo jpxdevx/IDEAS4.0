@@ -1,3 +1,4 @@
+import { showWaterAlert } from "./notification.js";
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 const SUPABASE_URL = "https://oqbzbvkbqzpcuivsahkx.supabase.co";
@@ -5,12 +6,28 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let phChart, turbidityChart, gaugeChart;
-let alertsCount = 0;
+let alertsCount = localStorage.getItem("alertsCount") || 0;
+let lastStatus = true;
+let firstLoad = true;
+
+let userEmail = "";
 
 document.addEventListener("DOMContentLoaded", async () => {
+
+  document.getElementById("alertsCount").textContent = alertsCount;
+
+  // Only request permission silently
+  await Notification.requestPermission();
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if(user)
+    userEmail = user.email;
+
   initCharts();
   updateDashboard();
   setInterval(updateDashboard, 5000);
+
 });
 
 // Fetch water data
@@ -53,6 +70,30 @@ function initCharts() {
   });
 }
 
+async function sendEmailAlert(pH, turbidity) {
+
+  if(!userEmail) return;
+
+  await fetch("/send-alert-email",{
+
+    method:"POST",
+
+    headers:{
+      "Content-Type":"application/json"
+    },
+
+    body: JSON.stringify({
+
+      email:userEmail,
+      pH:pH,
+      turbidity:turbidity
+
+    })
+
+  });
+
+}
+
 async function updateDashboard() {
   const data = await fetchData();
   if (!data || data.length === 0) return;
@@ -70,6 +111,36 @@ async function updateDashboard() {
     latest.turbidity.toFixed(2) + " NTU";
 
   const safe = evaluateWaterSafety(latest);
+
+  if(!safe && lastStatus === true && !firstLoad)
+  {
+    alertsCount++;
+
+    localStorage.setItem("alertsCount", alertsCount);
+
+    document.getElementById("alertsCount").textContent = alertsCount;
+
+    showWaterAlert(latest.pH, latest.turbidity);
+
+    sendEmailAlert(latest.pH, latest.turbidity);
+
+  }
+
+lastStatus = safe;
+firstLoad = false;
+
+//   const safe = evaluateWaterSafety(latest);
+
+//   if (!safe) 
+// {
+//   alertsCount++;
+
+//   localStorage.setItem("alertsCount", alertsCount);
+//   document.getElementById("alertsCount").textContent = alertsCount;
+
+//   showWaterAlert(latest.pH, latest.turbidity);
+// }
+
   const statusDiv = document.getElementById("statusMessage");
   statusDiv.textContent = safe ? "✅ Safe" : "⚠️ Unsafe";
   statusDiv.style.color = safe ? "#4caf50" : "#f44336";

@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.post("/data", async (req, res) => {
     try {
-        const { pH, turbidity } = req.body;
+        const { pH, turbidity, phVoltage } = req.body;
 
         if (pH === undefined || turbidity === undefined) {
             return res.status(400).json({ message: "Invalid sensor data" });
@@ -14,7 +14,14 @@ router.post("/data", async (req, res) => {
 
         console.log("New Reading:", pH, turbidity);
 
-        const newReading = new Reading({ pH, turbidity });
+        const newReading = new Reading({ pH, turbidity, phVoltage });
+
+        console.log("New Reading:");
+        console.log("pH:", pH);
+        console.log("Voltage:", phVoltage);
+        console.log("Turbidity:", turbidity);
+        console.log("-------------------");
+
         await newReading.save();
 
         const recent = await Reading.find()
